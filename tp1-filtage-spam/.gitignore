@@ -1,0 +1,11 @@
+# Guides et documentation
+/docs/TP1_Guide.pdf
+# Fichiers de sortie générés par les scripts
+
+# Environnement Python
+venv/
+__pycache__/
+*.pyc
+
+# Système
+.DS_Store
