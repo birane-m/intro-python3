@@ -1,4 +1,5 @@
 import csv
+from collections import Counter
 
 
 def format_phone_number(phone_number: str) -> tuple[bool, str | None]:
@@ -45,7 +46,7 @@ def main() -> None:
     names_and_numbers = [row[0].split(":") for row in rows]
     names, phone_numbers = zip(*names_and_numbers)
 
-    formatted_numbers = map(format_phone_number, phone_numbers)
+    formatted_numbers = list(map(format_phone_number, phone_numbers))
 
     valid_entries = [
         (name.strip(), formatted)
@@ -57,6 +58,31 @@ def main() -> None:
         writer = csv.writer(output_file)
         for name, phone_number in valid_entries:
             writer.writerow([f"{name} : {phone_number}"])
+
+    # Partie facultative 1 : les personnes ayant transmis un mauvais numéro
+    invalid_entries = [
+        (name.strip(), _)
+        for name, (is_valid, _) in zip(names, formatted_numbers)
+        if not is_valid
+    ]
+
+    print("Les noms des personnes ayant transmis un mauvais numéro de téléphone :")
+    for invalid in invalid_entries:
+        print(invalid[0])
+
+    # Partie facultative 2 : les personnes partageant un même numéro (foyers)
+    valid_phone_numbers = [valid for (_, valid) in valid_entries]
+
+    occurrences = Counter(valid_phone_numbers)
+    valid_phone_numbers_repeated = [number for number, count in occurrences.items() if count >= 2]
+
+    people_having_the_same_phone_number = [
+        [name for name, num in valid_entries if num == number]
+        for number in valid_phone_numbers_repeated
+    ]
+
+    print("Les foyers partageant un même numéro de téléphone :")
+    print(people_having_the_same_phone_number)
 
 
 if __name__ == "__main__":
