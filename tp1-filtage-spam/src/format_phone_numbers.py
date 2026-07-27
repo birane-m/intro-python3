@@ -81,7 +81,7 @@ def main() -> None:
         for number in valid_phone_numbers_repeated
     ]
 
-    print("Les foyers partageant un même numéro de téléphone :")
+    print("\nLes foyers partageant un même numéro de téléphone :")
     print(people_having_the_same_phone_number)
 
 
