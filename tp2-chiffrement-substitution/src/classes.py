@@ -36,7 +36,22 @@ class Encodeur:
 
         with open(output_file,'w', encoding='utf-8') as output:
             output.writelines(encoded_lines)
-        
+
+
+class Decodeur:
+    def __init__(self, password):
+        paires = zip(password, string.ascii_lowercase)
+        paires = sorted(paires)
+        mdp_inverse = "".join([lettre_originale for lettre_codee, lettre_originale in paires])
+        self.decodeur = Encodeur(mdp_inverse)
+
+    def decode_string(self,input_string):
+        return self.decodeur.encode_string(input_string)
+
+    def decode_file(self,input_file,output_file):
+        return self.decodeur.encode_file(input_file,output_file)
+
+    
 
 
 
@@ -47,4 +62,5 @@ if __name__=="__main__" :
 
     print(enc.encode_string("bonjour !"))
 
-    enc.encode_file("data/test_encoding.txt","output/test_encoding_output.txt")
+    dec = Decodeur("azertyuiopqsdfghjklmwxcvbn")
+    print(dec.decode_string("zgfpgwk !"))
