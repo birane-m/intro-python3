@@ -192,9 +192,12 @@ class CodeBreaker:
         if i is None or j is None:
             i = random.randint(0, len(mdp_list) - 1)
             j = random.randint(0, len(mdp_list) - 1)
+            while j == i:
+                j = random.randint(0, len(mdp_list) - 1)
 
         mdp_list[i], mdp_list[j] = mdp_list[j], mdp_list[i]
         return "".join(mdp_list), i, j
+
 
     def score_calculator(self, input_string):
         """
