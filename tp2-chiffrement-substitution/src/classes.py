@@ -3,6 +3,44 @@ import random
 import math
 
 
+class PasswordError(Exception):
+    """
+    Classe de base pour les exceptions liées à un mot de passe invalide.
+    Permet de capturer n'importe quelle erreur de mot de passe avec une seule clause except.
+    """
+    pass
+
+
+class InvalidPasswordLengthError(PasswordError):
+    """
+    Exception levée lorsque le mot de passe n'a pas la bonne longueur (26 lettres requises).
+    """
+
+    def __init__(self, pwd):
+        message = f"Longueur de mot de passe invalide : {len(pwd)} lettres reçues au lieu de 26."
+        super().__init__(message)
+
+
+class InvalidPasswordCharError(PasswordError):
+    """
+    Exception levée lorsque le mot de passe contient des caractères interdits (non-minuscules).
+    """
+
+    def __init__(self, pwd):
+        message = f"Le mot de passe doit contenir uniquement des lettres minuscules (a-z). Reçu : '{pwd}'."
+        super().__init__(message)
+
+
+class DuplicateLetterError(PasswordError):
+    """
+    Exception levée lorsqu'une lettre apparaît plus d'une fois dans le mot de passe.
+    """
+
+    def __init__(self, pwd):
+        message = f"Le mot de passe contient des lettres en doublon. Chaque lettre de a-z doit être unique."
+        super().__init__(message)
+
+
 class Encodeur:
     """
     Classe permettant de réaliser le chiffrement d'un texte par substitution monoalphabétique.
@@ -13,12 +51,23 @@ class Encodeur:
         Initialise un objet Encodeur avec un mot de passe (alphabet désordonné de 26 lettres).
 
         :param pwd: Chaîne de 26 lettres minuscules uniques, ou None pour générer un mot de passe aléatoire.
+        :raises InvalidPasswordLengthError: Si la longueur du mot de passe n'est pas de 26 lettres.
+        :raises InvalidPasswordCharError: Si le mot de passe contient autre chose que des lettres minuscules.
+        :raises DuplicateLetterError: Si des lettres sont répétées dans le mot de passe.
         """
         if pwd is None:
             self.password = list(string.ascii_lowercase)
             random.shuffle(self.password)
         else:
-            self.password = list(pwd)
+            pwd_str = "".join(pwd) if isinstance(pwd, list) else str(pwd)
+            if len(pwd_str) != 26:
+                raise InvalidPasswordLengthError(pwd_str)
+            if not all(c in string.ascii_lowercase for c in pwd_str):
+                raise InvalidPasswordCharError(pwd_str)
+            if len(set(pwd_str)) != 26:
+                raise DuplicateLetterError(pwd_str)
+            self.password = list(pwd_str)
+
 
     def encode_string(self, input_string):
         """
@@ -100,12 +149,12 @@ class Decodeur:
 class CodeBreaker:
     """
     Classe permettant d'attaquer et de casser un chiffrement par substitution sans connaître le mot de passe,
-    en utilisant des fréquences de quadgrammes (descente de gradient / hill climbing).
+    selon les instructions de l'énoncé TP2 (Section 4).
     """
 
     def __init__(self, quadgram_file):
         """
-        Initialise la classe en chargeant les quadgrammes et leurs scores depuis un fichier texte/CSV.
+        Initialise la classe en chargeant le fichier de quadgrammes.
 
         :param quadgram_file: Chemin du fichier contenant les quadgrammes et leurs fréquences.
         """
@@ -122,12 +171,12 @@ class CodeBreaker:
     def string_cleaner(self, input_string):
         """
         Nettoie une chaîne de caractères en ne conservant que les lettres de l'alphabet (a-z)
-        mises en minuscules, en supprimant espaces, ponctuation, chiffres et caractères spéciaux.
+        mises en minuscules (supprime ponctuation, espaces, chiffres).
 
         :param input_string: La chaîne brute à nettoyer.
         :return: La chaîne nettoyée.
         """
-        return "".join([c.lower() for c in input_string if c.lower() in string.ascii_lowercase])
+        return "".join([c.lower() for c in input_string if c.isalpha()])
 
     def pwd_generator(self, mdp, i=None, j=None):
         """
@@ -149,61 +198,49 @@ class CodeBreaker:
 
     def score_calculator(self, input_string):
         """
-        Calcule le score d'une chaîne de caractères (supposée nettoyée) en effectuant
+        Calcule le score d'une chaîne de caractères nettoyée en effectuant
         la somme des log des fréquences de ses quadgrammes.
 
-        :param input_string: Chaîne de caractères nettoyée (minuscules).
+        :param input_string: Chaîne nettoyée (minuscules).
         :return: Score (float) de la chaîne.
         """
         list_quadgrams = [input_string[i:i + 4] for i in range(len(input_string) - 3)]
-        scores = [self.dico_quads.get(quad, 1) for quad in list_quadgrams]
-        return sum(math.log(s) for s in scores)
+        return sum(math.log(self.dico_quads[quad]) for quad in list_quadgrams if quad in self.dico_quads)
 
-    def code_breaker(self, crypted_string, nb_restarts=10):
+    def code_breaker(self, crypted_string):
         """
-        Casse le chiffrement par substitution d'un texte chiffré par algorithme de descente de gradient.
+        Casse le code de cryptage selon l'algorithme exact de la section 4.3 du sujet TP2 :
+        1. Nettoyage du texte.
+        2. Encodeur initialisé avec l'alphabet "abcdefghijklmnopqrstuvwxyz".
+        3. Boucle d'échanges de 2 lettres jusqu'à 1000 permutations consécutives sans amélioration.
+        4. Déchiffrement du texte complet avec le mot de passe trouvé.
 
         :param crypted_string: Chaîne de caractères chiffrée.
-        :param nb_restarts: Nombre de redémarrages (restarts) aléatoires pour éviter les maxima locaux.
-        :return: Tuple (meilleur_mot_de_passe, texte_decrypte).
+        :return: Tuple (mot_de_passe_trouve, texte_decrypte).
         """
         cleaned_string = self.string_cleaner(crypted_string)
-        best_overall_score = -float('inf')
-        best_overall_pwd = string.ascii_lowercase
+        encoder = Encodeur(string.ascii_lowercase)
 
-        for restart in range(nb_restarts):
-            if restart == 0:
-                current_pwd = string.ascii_lowercase
+        current_decrypted = encoder.encode_string(cleaned_string)
+        current_score = self.score_calculator(current_decrypted)
+
+        stagnant_count = 0
+        while stagnant_count < 1000:
+            new_pwd, i, j = self.pwd_generator(encoder.password, None, None)
+            encoder.password = list(new_pwd)
+
+            cand_decrypted = encoder.encode_string(cleaned_string)
+            cand_score = self.score_calculator(cand_decrypted)
+
+            if cand_score > current_score:
+                current_score = cand_score
+                stagnant_count = 0
             else:
-                pwd_list = list(string.ascii_lowercase)
-                random.shuffle(pwd_list)
-                current_pwd = "".join(pwd_list)
+                # Annuler la permutation
+                encoder.password[i], encoder.password[j] = encoder.password[j], encoder.password[i]
+                stagnant_count += 1
 
-            enc = Encodeur(current_pwd)
-            current_decrypted = enc.encode_string(cleaned_string)
-            current_score = self.score_calculator(current_decrypted)
+        found_pwd = "".join(encoder.password)
+        decrypted_full = encoder.encode_string(crypted_string)
+        return found_pwd, decrypted_full
 
-            stagnant_count = 0
-            max_stagnant = 1000
-
-            while stagnant_count < max_stagnant:
-                new_pwd, i, j = self.pwd_generator(current_pwd)
-                enc.password = list(new_pwd)
-                cand_decrypted = enc.encode_string(cleaned_string)
-                cand_score = self.score_calculator(cand_decrypted)
-
-                if cand_score > current_score:
-                    current_score = cand_score
-                    current_pwd = new_pwd
-                    stagnant_count = 0
-                else:
-                    stagnant_count += 1
-                    enc.password = list(current_pwd)
-
-            if current_score > best_overall_score:
-                best_overall_score = current_score
-                best_overall_pwd = current_pwd
-
-        final_enc = Encodeur(best_overall_pwd)
-        decrypted_full = final_enc.encode_string(crypted_string)
-        return best_overall_pwd, decrypted_full

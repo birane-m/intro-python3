@@ -11,9 +11,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 try:
-    from classes import Encodeur
+    from classes import Encodeur, PasswordError
 except ImportError:
-    from src.classes import Encodeur
+    from src.classes import Encodeur, PasswordError
 
 
 def main():
@@ -25,9 +25,14 @@ def main():
     password = sys.argv[2]
     output_file = sys.argv[3]
 
-    encodeur = Encodeur(password)
-    encodeur.encode_file(input_file, output_file)
+    try:
+        encodeur = Encodeur(password)
+        encodeur.encode_file(input_file, output_file)
+    except PasswordError as e:
+        print(f"Erreur : {e}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':
     main()
+
