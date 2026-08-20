@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Output & temporary test files
+output/
+scratch/
+
+# OS and IDE files
+.DS_Store
+.idea/
+.vscode/
+
+# Testing & cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Zip submissions
+*.zip
