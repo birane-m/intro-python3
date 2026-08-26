@@ -111,54 +111,126 @@ Sortie:
 
 ## Installation et prerequis
 
-Prerequis:
+Pour executer ce projet sur son ordinateur, il faut avoir:
 
-- Python 3.10 ou plus recent;
-- aucune bibliotheque externe pour la partie nombres premiers.
+- Git, pour recuperer le projet;
+- Python 3, idealement Python 3.10 ou plus recent;
+- un terminal.
 
-Creation optionnelle d'un environnement virtuel:
+Verifier que Git est installe:
+
+```bash
+git --version
+```
+
+Verifier que Python 3 est installe:
+
+```bash
+python3 --version
+```
+
+Si la commande `python3` n'existe pas, il faut installer Python 3 avant de continuer.
+Sur Windows, la commande peut aussi etre:
+
+```bash
+py -3 --version
+```
+
+Exemples d'installation si Git ou Python 3 ne sont pas encore disponibles:
+
+```bash
+# Ubuntu / Debian
+sudo apt update
+sudo apt install git python3 python3-venv
+```
+
+```bash
+# macOS avec Homebrew
+brew install git python
+```
+
+Sur Windows, installer Git depuis le site officiel de Git et Python depuis le site officiel de Python.
+Pendant l'installation de Python, cocher l'option permettant d'ajouter Python au `PATH`.
+
+La partie nombres premiers n'utilise aucune bibliotheque externe: il n'y a donc pas de fichier `requirements.txt` a installer pour cette partie.
+
+Creation optionnelle d'un environnement virtuel, apres avoir clone le projet:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Il n'y a rien a installer avec `pip` pour executer cette partie du projet.
+Sous Windows, l'activation peut se faire avec:
+
+```bash
+.venv\Scripts\activate
+```
 
 ## Execution etape par etape
 
-Depuis la racine du projet:
+1. Cloner le depot.
+
+Avec SSH:
 
 ```bash
-cd tp4-nombres-premiers-et-images
+git clone git@github.com:birane-m/intro-python3.git
 ```
 
-Tester Goldbach jusqu'a `N`:
+Ou avec HTTPS:
+
+```bash
+git clone https://github.com/birane-m/intro-python3.git
+```
+
+2. Entrer dans le dossier du TP.
+
+```bash
+cd intro-python3/tp4-nombres-premiers-et-images
+```
+
+3. Verifier que Python 3 fonctionne.
+
+```bash
+python3 --version
+```
+
+4. Creer et activer un environnement virtuel, si souhaite.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Cette etape est optionnelle pour la partie nombres premiers, car le code n'a pas besoin de dependance externe.
+Sur Windows, remplacer `python3` par `py -3` si necessaire.
+
+5. Tester Goldbach jusqu'a `N`.
 
 ```bash
 python3 src/goldbach.py N
 ```
 
-Exemple:
+Exemple avec `N = 10`:
 
 ```bash
 python3 src/goldbach.py 10
 ```
 
-Decomposer un nombre `N`:
+6. Decomposer un nombre `N`.
 
 ```bash
 python3 src/decomposition.py N
 ```
 
-Exemples:
+Exemples avec `N = 68` puis `N = 67`:
 
 ```bash
 python3 src/decomposition.py 68
 python3 src/decomposition.py 67
 ```
 
-Si l'on se place directement dans le dossier `src`, les commandes deviennent:
+7. Variante: executer les scripts depuis le dossier `src`.
 
 ```bash
 cd src
