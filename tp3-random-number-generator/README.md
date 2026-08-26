@@ -1,31 +1,115 @@
-# TP3 : Random Number Generator (RNG)
+# TP3 - Random Number Generator
 
-Ce projet implémente un système orienté objet en Python pour simuler des tirages aléatoires de dés (classiques, truqués, illustrés, pièces de monnaie, sacs de billes sans remise) et des paquets de dés.
+Projet Python orienté objet permettant de simuler plusieurs générateurs aléatoires: dés équilibrés, dés truqués, dés illustrés, pièce de monnaie, sac de billes sans remise et paquets de dés.
 
----
+## Problème
 
-## Prerequis
+Le TP demande de modéliser différents objets capables de produire des tirages aléatoires, tout en évitant la duplication de code.
 
-* Python 3.8+
-* Aucune dépendance tierce requise (utilise uniquement les modules de la bibliothèque standard Python : `abc`, `random`, `copy`, `sys`).
+Il faut gérer plusieurs cas:
+1. un dé classique à `N` faces ;
+2. un dé truqué avec des probabilités pondérées ;
+3. un paquet regroupant plusieurs dés ;
+4. des objets plus spécialisés, comme une pièce ou un sac de billes tirées sans remise.
 
----
+## Solution proposée
 
-## Installation & Clonage
+La solution repose sur une hiérarchie de classes dans `src/classes.py`.
 
-Pour récupérer et tester le projet localement :
+`MyRandom` définit l'interface commune avec la méthode abstraite `tirer()`.
+
+`DeNfacestruque` gère les tirages pondérés grâce à `random.choices`. Les dés équilibrés héritent de cette classe en utilisant des poids identiques pour toutes les faces.
+
+`PaquetDe` regroupe plusieurs dés et surcharge l'opérateur `+` pour permettre des combinaisons naturelles comme `de1 + de2` ou `paquet + de`.
+
+`DeNfacesIllustrees`, `Piece` et `SacNBillesSansRemise` étendent le modèle pour gérer des faces nommées ou des tirages sans remise.
+
+Exemple d'utilisation directe:
+
+```python
+from classes import De6faces, DeNfaces, PaquetDe
+
+de = De6faces(seed=1)
+print(de.tirer(5))
+
+paquet = PaquetDe(De6faces(seed=1), DeNfaces(4, seed=2))
+print(paquet.tirer(3))
+```
+
+Sortie:
+
+```text
+[1, 6, 5, 2, 3]
+[(1, 4), (6, 4), (5, 1)]
+```
+
+## Exemples de tests
+
+Depuis le dossier du TP3, lancer la suite de tests:
 
 ```bash
-# 1. Cloner le dépôt
-git clone git@github.com:birane-m/intro-python3.git
+python3 src/test_tp3.py
+```
 
-# 2. Se déplacer dans le dossier du projet TP3
+Tester un dé classique:
+
+```bash
+python3 src/denface.py 6 5
+```
+
+Tester un dé truqué à 4 faces:
+
+```bash
+python3 src/denfacetruque.py 4 10 1 5 1 1
+```
+
+Tester un paquet de dés:
+
+```bash
+python3 src/paquetde.py 5 6 8 12
+```
+
+Vérifier la syntaxe Python:
+
+```bash
+python3 -m py_compile src/classes.py src/denface.py src/denfacetruque.py src/paquetde.py src/test_tp3.py
+```
+
+## Exécution
+
+Cloner le dépôt:
+
+```bash
+git clone https://github.com/birane-m/intro-python3.git
+```
+
+Se placer dans le dossier du TP3:
+
+```bash
 cd intro-python3/tp3-random-number-generator
 ```
 
----
+Lancer un dé classique:
 
-## Structure du projet
+```bash
+python3 src/denface.py <nb_faces> <nb_tirages>
+```
+
+Lancer un dé truqué:
+
+```bash
+python3 src/denfacetruque.py <nb_faces> <nb_tirages> <poids_1> ... <poids_N>
+```
+
+Lancer un paquet de dés:
+
+```bash
+python3 src/paquetde.py <nb_tirages> <faces_de1> <faces_de2> ...
+```
+
+Prérequis: Python 3. Aucune dépendance externe n'est nécessaire pour les scripts du TP.
+
+## Structure
 
 ```text
 tp3-random-number-generator/
@@ -33,51 +117,9 @@ tp3-random-number-generator/
 ├── docs/
 │   └── TP3.pdf
 └── src/
-    ├── classes.py          # Hiérarchie des classes (MyRandom, DeNfaces, PaquetDe, etc.)
-    ├── denface.py          # Script d'exécution pour dé classique
-    ├── denfacetruque.py    # Script d'exécution pour dé truqué
-    ├── paquetde.py         # Script d'exécution pour paquet de dés
-    └── test_tp3.py         # Suite de tests automatisés
-```
-
----
-
-## Structure des classes (`src/classes.py`)
-
-* **`MyRandom`** : Classe mère abstraite (`abc.ABC`). Elle empêche son instanciation directe et définit la méthode abstraite `tirer()`. Elle gère également l'opérateur d'addition `+` pour combiner les dés et les paquets.
-* **`DeNfacestruque` / `De6facestruque`** : Simule un dé à N (ou 6) faces avec une liste de poids pour chaque face. Si aucun poids n'est fourni, les faces sont équiprobables.
-* **`DeNfaces` / `De6faces`** : Simule un dé équilibré classique. Hérite de `DeNfacestruque` avec des poids égaux.
-* **`PaquetDe`** : Conteneur regroupant une liste de dés.
-  * **Addition (`+`)** : Permet d'additionner deux paquets (`pa1 + pa2`), un paquet et un dé (`pa + de`), ou deux dés (`de1 + de2`). Utilise des copies profondes (`copy.deepcopy`) pour éviter toute dépendance mémoire entre objets.
-  * **`tirer(n)`** : Effectue n lancers et regroupe les résultats par lancer via `zip`.
-* **`DeNfacesIllustrees` & `Piece`** : Dés dont les faces sont associées à des étiquettes (ex: `"rouge"`, `"bleu"`) ou des côtés de pièce (`"pile"`, `"face"`).
-* **`SacNBillesSansRemise`** : Sac de N billes tirées sans remise. Lorsque toutes les billes ont été tirées, le sac se recharge automatiquement.
-
----
-
-## Programmes de tirage (`src/`)
-
-Chaque script s'exécute directement en ligne de commande :
-
-* **Dé classique** :
-  ```bash
-  python3 src/denface.py <nb_faces> <nb_tirages>
-  ```
-* **Dé truqué** :
-  ```bash
-  python3 src/denfacetruque.py <nb_faces> <nb_tirages> <poids_1> ... <poids_N>
-  ```
-* **Paquet de dés** :
-  ```bash
-  python3 src/paquetde.py <nb_tirages> <faces_de1> <faces_de2> ...
-  ```
-
----
-
-## Execution des tests
-
-Pour lancer la suite de tests automatisés et tout vérifier :
-
-```bash
-python3 src/test_tp3.py
+    ├── classes.py
+    ├── denface.py
+    ├── denfacetruque.py
+    ├── paquetde.py
+    └── test_tp3.py
 ```

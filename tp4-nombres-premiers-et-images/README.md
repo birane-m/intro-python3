@@ -1,82 +1,50 @@
 # TP4 - Nombres premiers
 
-Classe Python permettant de calculer les nombres premiers jusqu'a une limite `N`, de tester la conjecture de Goldbach et d'afficher la decomposition d'un nombre en facteurs premiers.
+Projet Python permettant de calculer des nombres premiers, de tester la conjecture de Goldbach et de décomposer un entier en produit de facteurs premiers.
 
-Ce README documente uniquement la premiere partie du TP4. La partie sur les images, NumPy et OpenCV n'est pas traitee ici.
+Ce README documente uniquement la première partie du TP4. La partie sur les images, NumPy et OpenCV n'est pas traitée ici.
 
-## Fonctionnement
+## Problème
 
-La classe `NbPremier`, definie dans `src/classes.py`, construit les informations utiles avec le crible d'Eratosthene.
+Le TP demande de construire une classe `NbPremier` capable de préparer les nombres premiers jusqu'à une limite `N`, puis de réutiliser ces informations pour répondre efficacement à plusieurs questions.
 
-Le programme prepare:
-1. `est_prime`, une liste de booleens pour savoir rapidement si un nombre est premier ;
-2. `lprime`, la liste des nombres premiers trouves jusqu'a `N` ;
-3. `facteurs`, une liste permettant de retrouver les facteurs premiers d'un nombre.
+Il faut pouvoir:
+1. savoir si un entier `k` est premier ;
+2. afficher, pour chaque nombre pair entre `4` et `N`, une écriture `p=a+b` où `a` et `b` sont premiers ;
+3. afficher la décomposition d'un entier `N` en facteurs premiers.
 
-Les scripts fournis permettent ensuite:
-1. d'afficher les decompositions de Goldbach pour tous les nombres pairs entre `4` et `N` ;
-2. d'afficher la decomposition de `N` en produit de facteurs premiers.
+## Solution proposée
 
-## Prerequis
+La classe `NbPremier`, définie dans `src/classes.py`, utilise le crible d'Ératosthène pour calculer les nombres premiers jusqu'à `N`.
 
-- Git, pour cloner le depot ;
-- Python 3, idealement Python 3.10 ou plus recent ;
-- aucune dependance externe pour la partie nombres premiers.
+Elle construit trois structures:
+1. `est_prime`, une liste de booléens pour tester rapidement si un nombre est premier ;
+2. `lprime`, la liste des nombres premiers trouvés ;
+3. `facteurs`, une liste utilisée pour retrouver les facteurs premiers lors de la décomposition.
 
-Verifier les installations:
+`est_prime` permet un test de primalité en accès direct, tandis que `lprime` facilite le parcours des nombres premiers pour Goldbach.
 
-```bash
-git --version
-python3 --version
+Exemple d'utilisation directe:
+
+```python
+from classes import NbPremier
+
+nombres = NbPremier(20)
+
+print(nombres.est_nombre_premier(19))
+print(nombres.est_nombre_premier(20))
 ```
 
-Sur Windows, la commande Python peut etre:
+Sortie:
 
-```bash
-py -3 --version
+```text
+True
+False
 ```
 
-Si Python 3 ou Git ne sont pas installes, il faut les installer avant de continuer.
+## Exemples de tests
 
-## Installation
-
-Cloner le depot:
-
-```bash
-git clone https://github.com/birane-m/intro-python3.git
-```
-
-Se placer dans le dossier du TP4:
-
-```bash
-cd intro-python3/tp4-nombres-premiers-et-images
-```
-
-Creation optionnelle d'un environnement virtuel:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Sous Windows:
-
-```bash
-py -3 -m venv .venv
-.venv\Scripts\activate
-```
-
-Il n'y a pas de `requirements.txt` a installer pour cette partie du projet.
-
-## Utilisation
-
-Tester la conjecture de Goldbach jusqu'a `N`:
-
-```bash
-python3 src/goldbach.py N
-```
-
-Exemple:
+Depuis le dossier du TP4, tester la conjecture de Goldbach jusqu'à `10`:
 
 ```bash
 python3 src/goldbach.py 10
@@ -91,36 +59,63 @@ Sortie obtenue:
 10=3+7
 ```
 
-Afficher la decomposition en facteurs premiers de `N`:
+Tester la décomposition d'un nombre composé:
+
+```bash
+python3 src/decomposition.py 68
+```
+
+Sortie obtenue:
+
+```text
+68=2*2*17
+```
+
+Tester la décomposition d'un nombre premier:
+
+```bash
+python3 src/decomposition.py 67
+```
+
+Sortie obtenue:
+
+```text
+67=67
+```
+
+Vérifier la syntaxe Python:
+
+```bash
+python3 -m py_compile src/classes.py src/goldbach.py src/decomposition.py
+```
+
+## Exécution
+
+Cloner le dépôt:
+
+```bash
+git clone https://github.com/birane-m/intro-python3.git
+```
+
+Se placer dans le dossier du TP4:
+
+```bash
+cd intro-python3/tp4-nombres-premiers-et-images
+```
+
+Tester Goldbach jusqu'à `N`:
+
+```bash
+python3 src/goldbach.py N
+```
+
+Décomposer un entier `N`:
 
 ```bash
 python3 src/decomposition.py N
 ```
 
-Exemples:
-
-```bash
-python3 src/decomposition.py 68
-python3 src/decomposition.py 67
-```
-
-Sorties obtenues:
-
-```text
-68=2*2*17
-67=67
-```
-
-## Tests
-
-Les commandes suivantes ont ete utilisees pour verifier la partie nombres premiers:
-
-```bash
-python3 src/goldbach.py 10
-python3 src/decomposition.py 68
-python3 src/decomposition.py 67
-python3 -m py_compile src/classes.py src/goldbach.py src/decomposition.py
-```
+Prérequis: Python 3, idéalement Python 3.10 ou plus récent. Aucune dépendance externe n'est nécessaire pour la partie nombres premiers.
 
 ## Structure
 
