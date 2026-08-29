@@ -118,3 +118,117 @@ class NbPremier:
         print(f"{n_origin}={str_facteurs}")
 
 
+class Image:
+    """
+    Classe de manipulation d'image pour la deuxieme partie du TP4.
+
+    L'image est stockee dans l'attribut `im` sous forme de tableau NumPy.
+    OpenCV lit les images couleur avec trois canaux: bleu, vert, rouge.
+    """
+
+    def __init__(self, file_name):
+        """
+        Ouvre une image depuis le chemin donne.
+
+        Args:
+            file_name (str): Chemin du fichier image a ouvrir.
+
+        Raises:
+            FileNotFoundError: Si OpenCV ne parvient pas a lire le fichier.
+        """
+        import cv2
+
+        self.im = cv2.imread(file_name)
+        if self.im is None:
+            raise FileNotFoundError(f"Impossible d'ouvrir l'image: {file_name}")
+
+    def show_im(self, im=None, window_name="image"):
+        """
+        Affiche l'image dans une fenetre OpenCV.
+
+        Args:
+            im: Image a afficher. Si aucune image n'est fournie, affiche `self.im`.
+            window_name (str): Nom de la fenetre d'affichage.
+        """
+        import cv2
+
+        image_to_show = self.im if im is None else im
+        cv2.imshow(window_name, image_to_show)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    def save(self, output_file):
+        """
+        Sauvegarde l'image courante dans un fichier.
+
+        Args:
+            output_file (str): Chemin du fichier de sortie.
+
+        Raises:
+            IOError: Si l'ecriture du fichier echoue.
+        """
+        import cv2
+
+        if not cv2.imwrite(output_file, self.im):
+            raise IOError(f"Impossible d'ecrire l'image: {output_file}")
+
+    def to_gray(self):
+        """
+        Convertit une image couleur en noir et blanc.
+
+        Si l'image est deja en noir et blanc, la methode ne fait rien.
+        La conversion utilise la moyenne des trois canaux couleur en evitant
+        les debordements de capacite des entiers `uint8`.
+        """
+        if len(self.im.shape) == 3:
+            import numpy as np
+
+            self.im = np.mean(self.im, axis=2).astype(np.uint8)
+
+    def add_black_stripes(self, n):
+        """
+        Ajoute des bandes horizontales noires tous les `n` pixels.
+
+        Args:
+            n (int): Espacement entre deux bandes.
+
+        Raises:
+            ValueError: Si `n` n'est pas strictement positif.
+        """
+        if n <= 0:
+            raise ValueError("n doit etre strictement positif.")
+
+        self.im[::n] = 0
+
+    def compute_contours(self, k):
+        """
+        Calcule les contours d'une image en noir et blanc.
+
+        Pour chaque pixel suffisamment eloigne du bord, la valeur stockee est
+        la difference entre le maximum et le minimum des pixels du voisinage
+        carre de rayon `k`.
+
+        Args:
+            k (int): Rayon du voisinage utilise pour calculer le contour.
+
+        Raises:
+            ValueError: Si l'image est en couleur ou si `k` est negatif.
+        """
+        if len(self.im.shape) != 2:
+            raise ValueError("L'image doit être en noir et blanc pour calculer les contours.")
+        if k < 0:
+            raise ValueError("k doit etre positif ou nul.")
+
+        import numpy as np
+
+        hauteur, largeur = self.im.shape
+        temp_im = np.zeros_like(self.im)
+
+        for i in range(k, hauteur - k):
+            for j in range(k, largeur - k):
+                voisinage = self.im[i - k:i + k + 1, j - k:j + k + 1]
+                val_max = int(np.max(voisinage))
+                val_min = int(np.min(voisinage))
+                temp_im[i, j] = val_max - val_min
+
+        self.im = temp_im.astype(np.uint8)

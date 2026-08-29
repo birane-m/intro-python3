@@ -1,50 +1,50 @@
-# TP4 - Nombres premiers
+# TP4 - Nombres premiers et images
 
-Projet Python permettant de calculer des nombres premiers, de tester la conjecture de Goldbach et de décomposer un entier en produit de facteurs premiers.
+Projet Python combinant deux sujets: le calcul de nombres premiers avec le crible d'Eratosthene, puis la manipulation d'images avec NumPy et OpenCV.
 
-Ce README documente uniquement la première partie du TP4. La partie sur les images, NumPy et OpenCV n'est pas traitée ici.
+## Probleme
 
-## Problème
+La premiere partie du TP demande de construire une classe capable de preparer les nombres premiers jusqu'a une limite `N`, puis de reutiliser ces informations pour tester la primalite, verifier la conjecture de Goldbach et decomposer un entier en facteurs premiers.
 
-Le TP demande de construire une classe `NbPremier` capable de préparer les nombres premiers jusqu'à une limite `N`, puis de réutiliser ces informations pour répondre efficacement à plusieurs questions.
+La seconde partie introduit les images comme tableaux NumPy. L'objectif est de lire une image avec OpenCV, de la convertir en noir et blanc, puis de proposer quelques traitements simples comme l'ajout de bandes noires ou le calcul de contours.
 
-Il faut pouvoir:
-1. savoir si un entier `k` est premier ;
-2. afficher, pour chaque nombre pair entre `4` et `N`, une écriture `p=a+b` où `a` et `b` sont premiers ;
-3. afficher la décomposition d'un entier `N` en facteurs premiers.
+## Solution proposee
 
-## Solution proposée
+Le coeur du projet est regroupe dans `src/classes.py`.
 
-La classe `NbPremier`, définie dans `src/classes.py`, utilise le crible d'Ératosthène pour calculer les nombres premiers jusqu'à `N`.
+Pour les nombres premiers, la classe `NbPremier` utilise le crible d'Eratosthene. Elle construit:
+1. `est_prime`, une liste de booleens pour tester rapidement si un nombre est premier ;
+2. `lprime`, la liste des nombres premiers trouves ;
+3. `facteurs`, une liste utilisee pour retrouver les facteurs premiers lors de la decomposition.
 
-Elle construit trois structures:
-1. `est_prime`, une liste de booléens pour tester rapidement si un nombre est premier ;
-2. `lprime`, la liste des nombres premiers trouvés ;
-3. `facteurs`, une liste utilisée pour retrouver les facteurs premiers lors de la décomposition.
+Pour les images, la classe `Image` encapsule une image lue par OpenCV. Elle propose:
+1. `to_gray()`, pour convertir une image couleur en noir et blanc ;
+2. `add_black_stripes(n)`, pour ajouter des bandes horizontales noires tous les `n` pixels ;
+3. `compute_contours(k)`, pour calculer une image de contours a partir du contraste local ;
+4. `save(output_file)`, pour sauvegarder le resultat.
 
-`est_prime` permet un test de primalité en accès direct, tandis que `lprime` facilite le parcours des nombres premiers pour Goldbach.
+Le script `nb.py` correspond au rendu demande pour la conversion noir et blanc:
 
-Exemple d'utilisation directe:
-
-```python
-from classes import NbPremier
-
-nombres = NbPremier(20)
-
-print(nombres.est_nombre_premier(19))
-print(nombres.est_nombre_premier(20))
+```bash
+python3 nb.py entree.jpg sortie.jpg
 ```
 
-Sortie:
+Exemple d'utilisation directe des classes:
 
-```text
-True
-False
+```python
+from classes import NbPremier, Image
+
+nombres = NbPremier(20)
+print(nombres.est_nombre_premier(19))
+
+image = Image("data/chien.jpg")
+image.to_gray()
+image.save("output/chien_nb.jpg")
 ```
 
 ## Exemples de tests
 
-Depuis le dossier du TP4, tester la conjecture de Goldbach jusqu'à `10`:
+Tester la conjecture de Goldbach jusqu'a `10`:
 
 ```bash
 python3 src/goldbach.py 10
@@ -59,7 +59,7 @@ Sortie obtenue:
 10=3+7
 ```
 
-Tester la décomposition d'un nombre composé:
+Tester la decomposition d'un nombre compose:
 
 ```bash
 python3 src/decomposition.py 68
@@ -71,7 +71,7 @@ Sortie obtenue:
 68=2*2*17
 ```
 
-Tester la décomposition d'un nombre premier:
+Tester la decomposition d'un nombre premier:
 
 ```bash
 python3 src/decomposition.py 67
@@ -83,15 +83,27 @@ Sortie obtenue:
 67=67
 ```
 
-Vérifier la syntaxe Python:
+Convertir une image en noir et blanc:
 
 ```bash
-python3 -m py_compile src/classes.py src/goldbach.py src/decomposition.py
+python3 nb.py data/chien.jpg /tmp/chien_nb.jpg
 ```
 
-## Exécution
+Verifier que l'image de sortie a bien ete creee:
 
-Cloner le dépôt:
+```bash
+python3 -c "import cv2; im = cv2.imread('/tmp/chien_nb.jpg', cv2.IMREAD_GRAYSCALE); assert im is not None; print(im.shape)"
+```
+
+Verifier la syntaxe Python:
+
+```bash
+python3 -m py_compile nb.py src/classes.py src/goldbach.py src/decomposition.py
+```
+
+## Execution
+
+Cloner le depot:
 
 ```bash
 git clone https://github.com/birane-m/intro-python3.git
@@ -103,32 +115,59 @@ Se placer dans le dossier du TP4:
 cd intro-python3/tp4-nombres-premiers-et-images
 ```
 
-Tester Goldbach jusqu'à `N`:
+Creer et activer un environnement virtuel:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Sous Windows:
+
+```bash
+py -3 -m venv .venv
+.venv\Scripts\activate
+```
+
+Installer les dependances de la partie images:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+Tester Goldbach jusqu'a `N`:
 
 ```bash
 python3 src/goldbach.py N
 ```
 
-Décomposer un entier `N`:
+Decomposer un entier `N`:
 
 ```bash
 python3 src/decomposition.py N
 ```
 
-Prérequis: Python 3, idéalement Python 3.10 ou plus récent. Aucune dépendance externe n'est nécessaire pour la partie nombres premiers.
+Convertir une image couleur en noir et blanc:
+
+```bash
+python3 nb.py entree.jpg sortie.jpg
+```
 
 ## Structure
 
 ```text
 tp4-nombres-premiers-et-images/
-├── README.md
+├── data/
+│   ├── chien.jpg
+│   └── ps5.png
 ├── docs/
 │   └── TP4.pdf
 ├── src/
 │   ├── classes.py
+│   ├── decomposition.py
 │   ├── goldbach.py
-│   └── decomposition.py
-└── data/
-    ├── chien.jpg
-    └── ps5.png
+│   └── PremierContactNumpy.py
+├── nb.py
+├── requirements.txt
+└── README.md
 ```
