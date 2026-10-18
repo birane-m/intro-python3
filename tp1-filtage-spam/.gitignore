@@ -1,7 +1,1 @@
-# Environnement Python
-venv/
-__pycache__/
-*.pyc
-
-# Système
-.DS_Stor
+# Les exclusions communes sont définies dans ../.gitignore.

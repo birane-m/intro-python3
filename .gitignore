@@ -1,10 +1,28 @@
+# Python et environnements locaux
 __pycache__/
-*.pyc
+*.py[cod]
 *.egg-info/
+.venv/
+venv/
+env/
 .pytest_cache/
-.DS_Store
+.coverage
+htmlcov/
 
-# Ignore credentials & extra dirs
+# Résultats reproductibles et archives générées
+outputs/
+output/
+dist/
+scratch/
+*.zip
+
+# Fichiers de travail et ressources locales de cours
+utilities/
+tp3-random-number-generator/data/
+
+# Système, éditeurs et fichiers d'authentification locaux
+.DS_Store
+.idea/
+.vscode/
 token
 token.txt
-utilities/

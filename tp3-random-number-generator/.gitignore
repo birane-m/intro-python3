@@ -1,5 +1,1 @@
-__pycache__/
-*.pyc
-*.egg-info/
-src/brouillon.py
-data/
+# Les exclusions communes sont définies dans ../.gitignore.
