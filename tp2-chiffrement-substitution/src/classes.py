@@ -1,249 +1,181 @@
-import string
-import random
+"""Substitution monoalphabétique et recherche locale selon l'énoncé du TP2.
+
+Seules les lettres ASCII sont substituées. Les autres caractères sont conservés.
+Ce chiffrement historique est un exercice, pas un outil de protection de données.
+"""
+
 import math
+import random
+import string
+from pathlib import Path
 
 
-class PasswordError(Exception):
-    """
-    Classe de base pour les exceptions liées à un mot de passe invalide.
-    Permet de capturer n'importe quelle erreur de mot de passe avec une seule clause except.
-    """
-    pass
+class PasswordError(ValueError):
+    """Clé de substitution invalide."""
 
 
 class InvalidPasswordLengthError(PasswordError):
-    """
-    Exception levée lorsque le mot de passe n'a pas la bonne longueur (26 lettres requises).
-    """
-
     def __init__(self, pwd):
-        message = f"Longueur de mot de passe invalide : {len(pwd)} lettres reçues au lieu de 26."
-        super().__init__(message)
+        super().__init__(f"La clé doit contenir 26 lettres ; {len(pwd)} reçues.")
 
 
 class InvalidPasswordCharError(PasswordError):
-    """
-    Exception levée lorsque le mot de passe contient des caractères interdits (non-minuscules).
-    """
-
     def __init__(self, pwd):
-        message = f"Le mot de passe doit contenir uniquement des lettres minuscules (a-z). Reçu : '{pwd}'."
-        super().__init__(message)
+        super().__init__("La clé doit contenir uniquement les lettres minuscules a-z.")
 
 
 class DuplicateLetterError(PasswordError):
-    """
-    Exception levée lorsqu'une lettre apparaît plus d'une fois dans le mot de passe.
-    """
-
     def __init__(self, pwd):
-        message = f"Le mot de passe contient des lettres en doublon. Chaque lettre de a-z doit être unique."
-        super().__init__(message)
+        super().__init__("Chaque lettre de a-z doit apparaître une seule fois dans la clé.")
+
+
+def validate_password(password) -> str:
+    """Valide la clé originale, avant toute inversion ou substitution."""
+    if isinstance(password, list):
+        if not all(isinstance(c, str) for c in password):
+            raise PasswordError("Les éléments de la clé doivent être des lettres.")
+        password = "".join(password)
+    if not isinstance(password, str):
+        raise PasswordError("La clé doit être une chaîne ou une liste de lettres.")
+    if len(password) != 26:
+        raise InvalidPasswordLengthError(password)
+    if not all(c in string.ascii_lowercase for c in password):
+        raise InvalidPasswordCharError(password)
+    if len(set(password)) != 26:
+        raise DuplicateLetterError(password)
+    return password
 
 
 class Encodeur:
-    """
-    Classe permettant de réaliser le chiffrement d'un texte par substitution monoalphabétique.
-    """
+    """Chiffre avec une permutation de l'alphabet latin ; conserve la casse."""
 
-    def __init__(self, pwd=None):
-        """
-        Initialise un objet Encodeur avec un mot de passe (alphabet désordonné de 26 lettres).
-
-        :param pwd: Chaîne de 26 lettres minuscules uniques, ou None pour générer un mot de passe aléatoire.
-        :raises InvalidPasswordLengthError: Si la longueur du mot de passe n'est pas de 26 lettres.
-        :raises InvalidPasswordCharError: Si le mot de passe contient autre chose que des lettres minuscules.
-        :raises DuplicateLetterError: Si des lettres sont répétées dans le mot de passe.
-        """
+    def __init__(self, pwd=None, *, seed=None):
         if pwd is None:
             self.password = list(string.ascii_lowercase)
-            random.shuffle(self.password)
+            random.Random(seed).shuffle(self.password)
         else:
-            pwd_str = "".join(pwd) if isinstance(pwd, list) else str(pwd)
-            if len(pwd_str) != 26:
-                raise InvalidPasswordLengthError(pwd_str)
-            if not all(c in string.ascii_lowercase for c in pwd_str):
-                raise InvalidPasswordCharError(pwd_str)
-            if len(set(pwd_str)) != 26:
-                raise DuplicateLetterError(pwd_str)
-            self.password = list(pwd_str)
-
+            self.password = list(validate_password(pwd))
 
     def encode_string(self, input_string):
-        """
-        Chiffre une chaîne de caractères en appliquant la substitution alphabétique.
-        Les minuscules deviennent les minuscules du mot de passe.
-        Les majuscules deviennent les majuscules du mot de passe.
-        Les caractères non-alphabétiques sont conservés intacts.
-
-        :param input_string: La chaîne de caractères à encoder.
-        :return: La chaîne encodée.
-        """
-        crypted_string = [
-            self.password[ord(c) - ord('a')] if c.islower()
-            else self.password[ord(c.lower()) - ord('a')].upper() if c.isupper()
+        return "".join(
+            self.password[ord(c) - ord("a")] if c in string.ascii_lowercase
+            else self.password[ord(c) - ord("A")].upper() if c in string.ascii_uppercase
             else c
             for c in input_string
-        ]
-        return ''.join(crypted_string)
+        )
 
     def encode_file(self, input_file, output_file):
-        """
-        Chiffre le contenu d'un fichier d'entrée et écrit le texte chiffré dans le fichier de sortie.
-
-        :param input_file: Chemin du fichier d'entrée à lire.
-        :param output_file: Chemin du fichier de sortie à écrire.
-        """
-        try:
-            with open(input_file, 'r', encoding='utf-8') as text_file:
-                content = text_file.read()
-        except IOError:
-            print(f"Cannot open file {input_file}")
-            return
-
-        encoded_content = self.encode_string(content)
-
-        try:
-            with open(output_file, 'w', encoding='utf-8') as text_file:
-                text_file.write(encoded_content)
-        except IOError:
-            print(f"Cannot open file {output_file}")
+        """Lit puis écrit en UTF-8 ; laisse remonter les erreurs de fichiers."""
+        content = Path(input_file).read_bytes().decode("utf-8")
+        encoded = self.encode_string(content)
+        output = Path(output_file)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(encoded.encode("utf-8"))
 
 
 class Decodeur:
-    """
-    Classe permettant de déchiffrer un texte chiffré par substitution
-    en utilisant le mot de passe de chiffrement original.
-    """
+    """Déchiffre à partir de la clé originale de chiffrement."""
 
     def __init__(self, password):
-        """
-        Initialise le décodeur en générant le mot de passe inverse associé au mot de passe de codage.
-
-        :param password: Le mot de passe de codage original.
-        """
-        paires = zip(password, string.ascii_lowercase)
-        paires_triees = sorted(paires)
-        mdp_inverse = "".join([lettre_originale for lettre_codee, lettre_originale in paires_triees])
-        self.decodeur = Encodeur(mdp_inverse)
+        password = validate_password(password)
+        pairs = sorted(zip(password, string.ascii_lowercase))
+        inverse = "".join(original for _, original in pairs)
+        self.decodeur = Encodeur(inverse)
 
     def decode_string(self, input_string):
-        """
-        Déchiffre une chaîne de caractères à l'aide de l'encodeur avec le mot de passe inverse.
-
-        :param input_string: La chaîne chiffrée à déchiffrer.
-        :return: La chaîne déchiffrée.
-        """
         return self.decodeur.encode_string(input_string)
 
     def decode_file(self, input_file, output_file):
-        """
-        Déchiffre le contenu d'un fichier chiffré et enregistre le résultat dans le fichier de sortie.
-
-        :param input_file: Chemin du fichier chiffré.
-        :param output_file: Chemin du fichier de sortie.
-        """
-        return self.decodeur.encode_file(input_file, output_file)
+        self.decodeur.encode_file(input_file, output_file)
 
 
 class CodeBreaker:
-    """
-    Classe permettant d'attaquer et de casser un chiffrement par substitution sans connaître le mot de passe,
-    selon les instructions de l'énoncé TP2 (Section 4).
+    """Recherche locale par échanges de lettres et score de quadgrammes du sujet.
+
+    Le score somme les logarithmes des fréquences brutes connues. Les quadgrammes
+    absents contribuent zéro. La recherche n'assure pas de retrouver le texte initial.
     """
 
-    def __init__(self, quadgram_file):
-        """
-        Initialise la classe en chargeant le fichier de quadgrammes.
-
-        :param quadgram_file: Chemin du fichier contenant les quadgrammes et leurs fréquences.
-        """
+    def __init__(self, quadgram_file, *, seed=None):
         self.dico_quads = {}
-        try:
-            with open(quadgram_file, "r", encoding="utf-8") as q_f:
-                for line in q_f:
-                    parts = line.strip().split()
-                    if len(parts) == 2:
-                        self.dico_quads[parts[0].lower()] = float(parts[1])
-        except IOError:
-            print(f"Cannot open file {quadgram_file}")
+        with Path(quadgram_file).open(encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, 1):
+                if not line.strip():
+                    continue
+                parts = line.split()
+                if len(parts) != 2:
+                    raise ValueError(f"Quadgrammes, ligne {line_number} : deux colonnes attendues.")
+                quad, raw_frequency = parts
+                quad = quad.lower()
+                if len(quad) != 4 or any(c not in string.ascii_lowercase for c in quad):
+                    raise ValueError(f"Quadgramme invalide à la ligne {line_number}.")
+                frequency = float(raw_frequency)
+                if not math.isfinite(frequency) or frequency <= 0:
+                    raise ValueError(f"Fréquence non positive ou non finie à la ligne {line_number}.")
+                if quad in self.dico_quads:
+                    raise ValueError(f"Quadgramme répété à la ligne {line_number}.")
+                self.dico_quads[quad] = frequency
+        if not self.dico_quads:
+            raise ValueError("Le fichier de quadgrammes est vide.")
+        self._log_frequencies = {quad: math.log(value) for quad, value in self.dico_quads.items()}
+        self.seed = seed
+        self.rand = random.Random(seed)
+        self.last_search = None
 
     def string_cleaner(self, input_string):
-        """
-        Nettoie une chaîne de caractères en ne conservant que les lettres de l'alphabet (a-z)
-        mises en minuscules (supprime ponctuation, espaces, chiffres).
-
-        :param input_string: La chaîne brute à nettoyer.
-        :return: La chaîne nettoyée.
-        """
-        return "".join([c.lower() for c in input_string if c.isalpha()])
+        return "".join(c.lower() for c in input_string if c in string.ascii_letters)
 
     def pwd_generator(self, mdp, i=None, j=None):
-        """
-        Permute deux lettres aux positions i et j dans un mot de passe.
-        Si i et j ne sont pas fournis, ils sont choisis au hasard.
-
-        :param mdp: Le mot de passe (chaîne de caractères ou liste).
-        :param i: Indice de la première lettre (optionnel).
-        :param j: Indice de la deuxième lettre (optionnel).
-        :return: Un tuple (nouveau_mot_de_passe_str, i, j).
-        """
-        mdp_list = list(mdp)
-        if i is None or j is None:
-            i = random.randint(0, len(mdp_list) - 1)
-            j = random.randint(0, len(mdp_list) - 1)
-            while j == i:
-                j = random.randint(0, len(mdp_list) - 1)
-
-        mdp_list[i], mdp_list[j] = mdp_list[j], mdp_list[i]
-        return "".join(mdp_list), i, j
-
+        letters = list(validate_password(mdp))
+        if (i is None) != (j is None):
+            raise ValueError("Fournir les deux indices, ou aucun.")
+        if i is None:
+            i, j = self.rand.sample(range(26), 2)
+        if any(isinstance(k, bool) or not isinstance(k, int) or not 0 <= k < 26 for k in (i, j)):
+            raise ValueError("Les indices doivent être des entiers entre 0 et 25.")
+        if i == j:
+            raise ValueError("Les deux indices doivent être distincts.")
+        letters[i], letters[j] = letters[j], letters[i]
+        return "".join(letters), i, j
 
     def score_calculator(self, input_string):
-        """
-        Calcule le score d'une chaîne de caractères nettoyée en effectuant
-        la somme des log des fréquences de ses quadgrammes.
+        quadgrams = [input_string[i:i + 4] for i in range(len(input_string) - 3)]
+        scores = [self._log_frequencies.get(quad, 0.0) for quad in quadgrams]
+        return sum(scores)
 
-        :param input_string: Chaîne nettoyée (minuscules).
-        :return: Score (float) de la chaîne.
-        """
-        list_quadgrams = [input_string[i:i + 4] for i in range(len(input_string) - 3)]
-        return sum(math.log(self.dico_quads[quad]) for quad in list_quadgrams if quad in self.dico_quads)
+    def code_breaker(self, crypted_string, *, stagnation_limit=1000, max_iterations=None):
+        """Retourne (clé de déchiffrement, texte candidat).
 
-    def code_breaker(self, crypted_string):
+        Arrêt après 1000 échecs consécutifs par défaut, comme dans le TP.
+        Une limite globale d'itérations peut être ajoutée explicitement.
         """
-        Casse le code de cryptage selon l'algorithme exact de la section 4.3 du sujet TP2 :
-        1. Nettoyage du texte.
-        2. Encodeur initialisé avec l'alphabet "abcdefghijklmnopqrstuvwxyz".
-        3. Boucle d'échanges de 2 lettres jusqu'à 1000 permutations consécutives sans amélioration.
-        4. Déchiffrement du texte complet avec le mot de passe trouvé.
-
-        :param crypted_string: Chaîne de caractères chiffrée.
-        :return: Tuple (mot_de_passe_trouve, texte_decrypte).
-        """
-        cleaned_string = self.string_cleaner(crypted_string)
+        for name, value in (("stagnation_limit", stagnation_limit), ("max_iterations", max_iterations)):
+            if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value <= 0):
+                raise ValueError(f"{name} doit être un entier strictement positif.")
+        if stagnation_limit is None:
+            raise ValueError("stagnation_limit doit être un entier strictement positif.")
+        cleaned = self.string_cleaner(crypted_string)
+        if len(cleaned) < 4:
+            raise ValueError("Il faut au moins quatre lettres a-z pour utiliser des quadgrammes.")
         encoder = Encodeur(string.ascii_lowercase)
-
-        current_decrypted = encoder.encode_string(cleaned_string)
-        current_score = self.score_calculator(current_decrypted)
-
-        stagnant_count = 0
-        while stagnant_count < 1000:
-            new_pwd, i, j = self.pwd_generator(encoder.password, None, None)
+        current_score = self.score_calculator(cleaned)
+        initial_score = current_score
+        stagnant = iterations = 0
+        while stagnant < stagnation_limit and (max_iterations is None or iterations < max_iterations):
+            new_pwd, i, j = self.pwd_generator(encoder.password)
             encoder.password = list(new_pwd)
-
-            cand_decrypted = encoder.encode_string(cleaned_string)
-            cand_score = self.score_calculator(cand_decrypted)
-
-            if cand_score > current_score:
-                current_score = cand_score
-                stagnant_count = 0
+            candidate_score = self.score_calculator(encoder.encode_string(cleaned))
+            iterations += 1
+            if candidate_score > current_score:
+                current_score = candidate_score
+                stagnant = 0
             else:
-                # Annuler la permutation
                 encoder.password[i], encoder.password[j] = encoder.password[j], encoder.password[i]
-                stagnant_count += 1
-
-        found_pwd = "".join(encoder.password)
-        decrypted_full = encoder.encode_string(crypted_string)
-        return found_pwd, decrypted_full
-
+                stagnant += 1
+        self.last_search = {
+            "seed": self.seed, "iterations": iterations,
+            "stagnation_limit": stagnation_limit, "max_iterations": max_iterations,
+            "initial_score": initial_score, "final_score": current_score,
+            "stop_reason": "stagnation" if stagnant >= stagnation_limit else "iteration_limit",
+        }
+        return "".join(encoder.password), encoder.encode_string(crypted_string)

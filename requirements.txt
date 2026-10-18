@@ -1,0 +1,2 @@
+# Installation complète ; TP1 à TP3 et calculs numériques du TP4 : bibliothèque standard.
+-r tp4-nombres-premiers-et-images/requirements.txt

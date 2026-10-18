@@ -1,234 +1,158 @@
-class ParameterTooHighValue(Exception):
-    """
-    Exception levée lorsqu'un paramètre k demandé dépasse 
-    la limite n définie lors de l'initialisation de la classe.
-    """
-    pass
+"""Crible d'Ératosthène et traitements d'images demandés dans le TP4."""
+
+from math import isqrt
+from pathlib import Path
+
+
+def _integer(value, name, minimum=0):
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{name} doit être un entier.")
+    if value < minimum:
+        raise ValueError(f"{name} doit être supérieur ou égal à {minimum}.")
+    return value
+
+
+class ParameterTooHighValue(ValueError):
+    """Valeur demandée supérieure à la limite du crible."""
 
 
 class NbPremier:
-    """
-    Classe permettant de manipuler des nombres premiers via le crible d'Ératosthène.
-    Offre des méthodes pour vérifier la primalité, tester la conjecture de Goldbach 
-    et décomposer un nombre en facteurs premiers.
-    """
+    """Prépare les nombres premiers entre 0 et n, bornes incluses."""
 
     def __init__(self, n):
-        """
-        Initialise les structures de données jusqu'à l'entier n.
-        
-        Args:
-            n (int): La limite supérieure pour le calcul des nombres premiers.
-        """
         self.est_prime, self.lprime, self.facteurs = self.eratosthene(n)
 
     def eratosthene(self, n):
-        """
-        Génère les nombres premiers en utilisant le crible d'Ératosthène optimisé 
-        avec le slicing Python. Garde également une trace des facteurs pour la décomposition.
-        
-        Args:
-            n (int): La limite supérieure.
-            
-        Returns:
-            tuple: (liste de booléens, liste des nombres premiers, liste des facteurs)
-        """
-        # Initialisation : 0 et 1 ne sont pas premiers, le reste est présumé vrai
-        l = [False, False] + [True] * (n - 1)
-        
-        # Liste traçant le plus grand diviseur trouvé pour chaque nombre
-        facteurs = list(range(n + 1))
+        _integer(n, "La limite du crible")
+        flags = [False] * (n + 1)
+        flags[2:] = [True] * max(0, n - 1)
+        factors = list(range(n + 1))
+        for i in range(2, isqrt(n) + 1):
+            if flags[i]:
+                flags[i * i::i] = [False] * len(flags[i * i::i])
+                # Mémorise un facteur premier, pas nécessairement le plus grand.
+                factors[i * i::i] = [i] * len(factors[i * i::i])
+        return flags, [i for i, prime in enumerate(flags) if prime], factors
 
-        for i in range(2, n + 1):
-            if l[i]:
-                # On barre tous les multiples de i à partir de i*i
-                l[i*i::i] = [False] * len(l[i*i::i])
-                # On mémorise le facteur premier i dans les cases de ses multiples
-                facteurs[i*i::i] = [i] * len(facteurs[i*i::i])
-
-        # Extraction des nombres premiers identifiés
-        lprime = [i for i in range(2, n + 1) if l[i]]
-
-        return l, lprime, facteurs
+    def _check_upper_bound(self, k):
+        if k >= len(self.est_prime):
+            raise ParameterTooHighValue(f"{k} dépasse la limite du crible ({len(self.est_prime) - 1}).")
 
     def est_nombre_premier(self, k):
+        if isinstance(k, bool) or not isinstance(k, int):
+            raise TypeError("Le nombre à tester doit être un entier.")
+        self._check_upper_bound(k)
+        return k >= 2 and self.est_prime[k]
+
+    def goldbach_pairs(self):
+        """Retourne un couple de premiers pour chaque pair de 4 à n.
+
+        Une vérification sur cet intervalle fini ne prouve pas la conjecture.
         """
-        Vérifie si un nombre k est premier en temps constant O(1).
-        
-        Args:
-            k (int): Le nombre à tester.
-            
-        Raises:
-            ParameterTooHighValue: Si k est supérieur à la limite n d'initialisation.
-            
-        Returns:
-            bool: True si k est premier, False sinon.
-        """
-        if k > len(self.est_prime) - 1:
-            raise ParameterTooHighValue(
-                f"Valeur de k = {k} trop élevée. Saisir un entier <= {len(self.est_prime) - 1}."
-            ) 
-        
-        return self.est_prime[k]
+        pairs = {
+            value: next(((first, value - first) for first in self.lprime
+                         if first <= value // 2 and self.est_prime[value - first]), None)
+            for value in range(4, len(self.est_prime), 2)
+        }
+        if any(pair is None for pair in pairs.values()):
+            raise RuntimeError("Un entier pair sans décomposition a été rencontré.")
+        return pairs
 
     def test_goldbach(self):
-        """
-        Vérifie la conjecture de Goldbach pour tous les nombres pairs entre 4 et n.
-        Affiche le résultat sous le format strict demandé (ex: 4=2+2).
-        """
-        n = len(self.est_prime) - 1
-        
-        # Création du dictionnaire associant {p: (a, b)}
-        dico = {
-            p: next((a, p - a) for a in self.lprime if self.est_prime[p - a])
-            for p in range(4, n + 1, 2)
-        }
+        for value, (first, second) in self.goldbach_pairs().items():
+            print(f"{value}={first}+{second}")
 
-        # Affichage formaté
-        for p in range(4, n + 1, 2):
-            print(f"{p}={dico[p][0]}+{dico[p][1]}")
+    def decomposition_factors(self, k):
+        """Retourne les facteurs premiers triés d'un entier k >= 2."""
+        _integer(k, "Le nombre à décomposer", minimum=2)
+        self._check_upper_bound(k)
+        found = []
+        while k > 1:
+            factor = self.facteurs[k]
+            found.append(factor)
+            k //= factor
+        return sorted(found)
 
     def decomposition(self, k):
-        """
-        Affiche la décomposition en facteurs premiers d'un entier k.
-        Utilise la trace mémorisée lors du crible pour une complexité optimale.
-        
-        Args:
-            k (int): Le nombre à décomposer.
-            
-        Raises:
-            ParameterTooHighValue: Si k est supérieur à la limite n d'initialisation.
-        """
-        if k > len(self.est_prime) - 1:
-            raise ParameterTooHighValue(
-                f"Valeur de k = {k} trop élevée. Saisir un entier <= {len(self.est_prime) - 1}."
-            )
-
-        n_origin = k
-        facteurs_trouves = []
-
-        # Remontée des facteurs successifs
-        while k > 1:
-            facteur = self.facteurs[k]
-            facteurs_trouves.append(facteur)
-            k = k // facteur
-
-        facteurs_trouves.sort()
-        str_facteurs = "*".join(map(str, facteurs_trouves))
-        print(f"{n_origin}={str_facteurs}")
+        factors = self.decomposition_factors(k)
+        print(f"{k}=" + "*".join(map(str, factors)))
 
 
 class Image:
-    """
-    Classe de manipulation d'image pour la deuxieme partie du TP4.
-
-    L'image est stockee dans l'attribut `im` sous forme de tableau NumPy.
-    OpenCV lit les images couleur avec trois canaux: bleu, vert, rouge.
-    """
+    """Image uint8, en BGR (OpenCV) ou en niveaux de gris."""
 
     def __init__(self, file_name):
-        """
-        Ouvre une image depuis le chemin donne.
-
-        Args:
-            file_name (str): Chemin du fichier image a ouvrir.
-
-        Raises:
-            FileNotFoundError: Si OpenCV ne parvient pas a lire le fichier.
-        """
         import cv2
 
-        self.im = cv2.imread(file_name)
+        if not Path(file_name).is_file():
+            raise FileNotFoundError(f"Image introuvable : {file_name}")
+        try:
+            self.im = cv2.imread(str(file_name))
+        except cv2.error as exc:
+            raise OSError(f"Impossible de lire l'image : {file_name}") from exc
         if self.im is None:
-            raise FileNotFoundError(f"Impossible d'ouvrir l'image: {file_name}")
+            raise FileNotFoundError(f"Impossible d'ouvrir l'image : {file_name}")
+
+    @classmethod
+    def from_array(cls, array):
+        """Construit une image à partir d'une copie d'un tableau uint8 valide."""
+        import numpy as np
+
+        values = np.asarray(array)
+        if values.dtype != np.uint8 or values.size == 0:
+            raise ValueError("Un tableau uint8 non vide est requis.")
+        if values.ndim not in (2, 3) or (values.ndim == 3 and values.shape[2] != 3):
+            raise ValueError("Forme attendue : (hauteur, largeur) ou (hauteur, largeur, 3).")
+        image = cls.__new__(cls)
+        image.im = values.copy()
+        return image
 
     def show_im(self, im=None, window_name="image"):
-        """
-        Affiche l'image dans une fenetre OpenCV.
-
-        Args:
-            im: Image a afficher. Si aucune image n'est fournie, affiche `self.im`.
-            window_name (str): Nom de la fenetre d'affichage.
-        """
+        """Ouvre une fenêtre ; nécessite un environnement graphique."""
         import cv2
 
-        image_to_show = self.im if im is None else im
-        cv2.imshow(window_name, image_to_show)
+        cv2.imshow(window_name, self.im if im is None else im)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     def save(self, output_file):
-        """
-        Sauvegarde l'image courante dans un fichier.
-
-        Args:
-            output_file (str): Chemin du fichier de sortie.
-
-        Raises:
-            IOError: Si l'ecriture du fichier echoue.
-        """
         import cv2
 
-        if not cv2.imwrite(output_file, self.im):
-            raise IOError(f"Impossible d'ecrire l'image: {output_file}")
+        output = Path(output_file)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            saved = cv2.imwrite(str(output), self.im)
+        except cv2.error as exc:
+            raise OSError(f"Format d'image non pris en charge ou écriture impossible : {output}") from exc
+        if not saved:
+            raise OSError(f"Impossible d'écrire l'image : {output}")
 
     def to_gray(self):
-        """
-        Convertit une image couleur en noir et blanc.
-
-        Si l'image est deja en noir et blanc, la methode ne fait rien.
-        La conversion utilise la moyenne des trois canaux couleur en evitant
-        les debordements de capacite des entiers `uint8`.
-        """
-        if len(self.im.shape) == 3:
+        """Moyenne des canaux, comme dans le sujet, puis troncature en uint8."""
+        if self.im.ndim == 3:
             import numpy as np
 
             self.im = np.mean(self.im, axis=2).astype(np.uint8)
 
     def add_black_stripes(self, n):
-        """
-        Ajoute des bandes horizontales noires tous les `n` pixels.
-
-        Args:
-            n (int): Espacement entre deux bandes.
-
-        Raises:
-            ValueError: Si `n` n'est pas strictement positif.
-        """
-        if n <= 0:
-            raise ValueError("n doit etre strictement positif.")
-
+        """Noircit une ligne sur n, en commençant par la première."""
+        _integer(n, "L'espacement des bandes", minimum=1)
         self.im[::n] = 0
 
     def compute_contours(self, k):
+        """Contraste max-min dans un carré de rayon k ; bordure laissée à zéro.
+
+        Version pédagogique à boucles explicites, de coût O(H * W * (2k+1)^2).
         """
-        Calcule les contours d'une image en noir et blanc.
-
-        Pour chaque pixel suffisamment eloigne du bord, la valeur stockee est
-        la difference entre le maximum et le minimum des pixels du voisinage
-        carre de rayon `k`.
-
-        Args:
-            k (int): Rayon du voisinage utilise pour calculer le contour.
-
-        Raises:
-            ValueError: Si l'image est en couleur ou si `k` est negatif.
-        """
-        if len(self.im.shape) != 2:
-            raise ValueError("L'image doit être en noir et blanc pour calculer les contours.")
-        if k < 0:
-            raise ValueError("k doit etre positif ou nul.")
-
         import numpy as np
 
-        hauteur, largeur = self.im.shape
-        temp_im = np.zeros_like(self.im)
-
-        for i in range(k, hauteur - k):
-            for j in range(k, largeur - k):
-                voisinage = self.im[i - k:i + k + 1, j - k:j + k + 1]
-                val_max = int(np.max(voisinage))
-                val_min = int(np.min(voisinage))
-                temp_im[i, j] = val_max - val_min
-
-        self.im = temp_im.astype(np.uint8)
+        _integer(k, "Le rayon du voisinage")
+        if self.im.ndim != 2:
+            raise ValueError("Convertir l'image en niveaux de gris avant le calcul des contours.")
+        height, width = self.im.shape
+        result = np.zeros_like(self.im)
+        for i in range(k, height - k):
+            for j in range(k, width - k):
+                area = self.im[i - k:i + k + 1, j - k:j + k + 1]
+                result[i, j] = int(np.max(area)) - int(np.min(area))
+        self.im = result

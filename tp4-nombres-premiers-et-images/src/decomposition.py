@@ -1,8 +1,7 @@
-import sys
-from classes import NbPremier
+"""Commande decomposition du TP4 ; voir --help."""
+
+from number_cli import main
+
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        N = int(sys.argv[1])
-        nombres = NbPremier(N)
-        nombres.decomposition(N)
+    raise SystemExit(main("decomposition"))
