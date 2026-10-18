@@ -1,56 +1,29 @@
-# TP4 - Nombres premiers et images
+# TP4 — Nombres premiers et images
 
-Projet Python combinant deux sujets: le calcul de nombres premiers avec le crible d'Eratosthene, puis la manipulation d'images avec NumPy et OpenCV.
+Deux parties indépendantes : préparer les nombres premiers avec un crible d’Ératosthène, puis manipuler des images comme des tableaux NumPy.
 
-## Probleme
+[Énoncé](docs/TP4.pdf) · [Installation commune](../README.md#installation) · [Guide d’exécution](../GUIDE_EXECUTION.md)
 
-La premiere partie du TP demande de construire une classe capable de preparer les nombres premiers jusqu'a une limite `N`, puis de reutiliser ces informations pour tester la primalite, verifier la conjecture de Goldbach et decomposer un entier en facteurs premiers.
+## Nombres premiers
 
-La seconde partie introduit les images comme tableaux NumPy. L'objectif est de lire une image avec OpenCV, de la convertir en noir et blanc, puis de proposer quelques traitements simples comme l'ajout de bandes noires ou le calcul de contours.
+`NbPremier(n)` prépare les valeurs de 0 à `n`, bornes incluses. Le crible utilise le slicing et ne barre les multiples qu’avec les facteurs au plus égaux à la racine carrée de `n`.
 
-## Solution proposee
+| Méthode | Résultat |
+| --- | --- |
+| `est_nombre_premier(k)` | Booléen ; `False` si `k < 2`, exception si `k > n` |
+| `decomposition_factors(k)` | Liste triée des facteurs premiers, pour `2 <= k <= n` |
+| `decomposition(k)` | Affiche le format strict du sujet, par exemple `68=2*2*17` |
+| `goldbach_pairs()` | Dictionnaire d’un couple de premiers pour chaque pair de 4 à `n` |
+| `test_goldbach()` | Affiche les égalités au format du sujet |
 
-Le coeur du projet est regroupe dans `src/classes.py`.
-
-Pour les nombres premiers, la classe `NbPremier` utilise le crible d'Eratosthene. Elle construit:
-1. `est_prime`, une liste de booleens pour tester rapidement si un nombre est premier ;
-2. `lprime`, la liste des nombres premiers trouves ;
-3. `facteurs`, une liste utilisee pour retrouver les facteurs premiers lors de la decomposition.
-
-Pour les images, la classe `Image` encapsule une image lue par OpenCV. Elle propose:
-1. `to_gray()`, pour convertir une image couleur en noir et blanc ;
-2. `add_black_stripes(n)`, pour ajouter des bandes horizontales noires tous les `n` pixels ;
-3. `compute_contours(k)`, pour calculer une image de contours a partir du contraste local ;
-4. `save(output_file)`, pour sauvegarder le resultat.
-
-Le script `nb.py` correspond au rendu demande pour la conversion noir et blanc:
+Depuis le dossier du TP4 :
 
 ```bash
-python3 nb.py entree.jpg sortie.jpg
+python src/goldbach.py 10
+python src/decomposition.py 68
 ```
 
-Exemple d'utilisation directe des classes:
-
-```python
-from classes import NbPremier, Image
-
-nombres = NbPremier(20)
-print(nombres.est_nombre_premier(19))
-
-image = Image("data/chien.jpg")
-image.to_gray()
-image.save("output/chien_nb.jpg")
-```
-
-## Exemples de tests
-
-Tester la conjecture de Goldbach jusqu'a `10`:
-
-```bash
-python3 src/goldbach.py 10
-```
-
-Sortie obtenue:
+La première commande affiche :
 
 ```text
 4=2+2
@@ -59,115 +32,60 @@ Sortie obtenue:
 10=3+7
 ```
 
-Tester la decomposition d'un nombre compose:
+Tester Goldbach jusqu’à une borne finie ne prouve pas la conjecture. La mémoire du crible croît avec la borne ; ce code n’a pas vocation à traiter des entiers arbitrairement grands.
+
+## Images
+
+Installer les dépendances dans un environnement virtuel activé :
 
 ```bash
-python3 src/decomposition.py 68
+python -m pip install -r requirements.txt
 ```
 
-Sortie obtenue:
-
-```text
-68=2*2*17
-```
-
-Tester la decomposition d'un nombre premier:
+Le fichier de dépendances à la racine du dépôt renvoie vers celui-ci ; les deux procédures installent les mêmes bibliothèques.
 
 ```bash
-python3 src/decomposition.py 67
+python nb.py data/chien.jpg output/chien_gris.png
+python src/PremierContactNumpy.py
 ```
 
-Sortie obtenue:
+`PremierContactNumpy.py` explore le broadcasting et les propriétés d’une image. Il est désormais fourni et importable sans exécuter de traitement à l’import.
 
-```text
-67=67
+La classe `Image` propose :
+
+| Méthode | Comportement |
+| --- | --- |
+| `to_gray()` | Moyenne des trois canaux puis conversion en `uint8` ; une image déjà grise reste identique |
+| `add_black_stripes(n)` | Une ligne noire tous les `n` pixels, à partir de la première |
+| `compute_contours(k)` | Différence max-min dans le carré de rayon `k`, bordure à zéro |
+| `save(path)` | Crée les dossiers parents et sauvegarde l’image |
+| `Image.from_array(array)` | Construit une image depuis une copie d’un tableau `uint8` |
+| `show_im()` | Ouvre une fenêtre ; réservé à un environnement graphique |
+
+Il s’agit de **niveaux de gris**, pas d’une binarisation noir/blanc. La moyenne suit le sujet ; elle n’utilise pas les pondérations perceptuelles d’une conversion standard. Les contours attendent une image grise et un rayon entier positif ou nul. Un voisinage trop grand laisse une image entièrement nulle.
+
+Depuis ce dossier :
+
+```python
+from src.classes import Image
+
+image = Image("data/chien.jpg")
+image.to_gray()
+image.compute_contours(1)
+image.save("output/contours.png")
 ```
 
-Convertir une image en noir et blanc:
+PNG préserve exactement les pixels ; JPEG applique une compression avec pertes. Le calcul des contours reste à boucles explicites et peut être lent pour de grandes images.
+
+## Démonstration et tests
+
+Depuis la racine du dépôt :
 
 ```bash
-python3 nb.py data/chien.jpg /tmp/chien_nb.jpg
+python scripts/run_examples.py
+python -m unittest tests.test_tp4 tests.test_images -v
 ```
 
-Verifier que l'image de sortie a bien ete creee:
+`outputs/index.md` donne accès à la comparaison de l’original, des niveaux de gris, des bandes et des contours. Chaque traitement part séparément de la même image source.
 
-```bash
-python3 -c "import cv2; im = cv2.imread('/tmp/chien_nb.jpg', cv2.IMREAD_GRAYSCALE); assert im is not None; print(im.shape)"
-```
-
-Verifier la syntaxe Python:
-
-```bash
-python3 -m py_compile nb.py src/classes.py src/goldbach.py src/decomposition.py
-```
-
-## Execution
-
-Cloner le depot:
-
-```bash
-git clone https://github.com/birane-m/intro-python3.git
-```
-
-Se placer dans le dossier du TP4:
-
-```bash
-cd intro-python3/tp4-nombres-premiers-et-images
-```
-
-Creer et activer un environnement virtuel:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Sous Windows:
-
-```bash
-py -3 -m venv .venv
-.venv\Scripts\activate
-```
-
-Installer les dependances de la partie images:
-
-```bash
-python3 -m pip install -r requirements.txt
-```
-
-Tester Goldbach jusqu'a `N`:
-
-```bash
-python3 src/goldbach.py N
-```
-
-Decomposer un entier `N`:
-
-```bash
-python3 src/decomposition.py N
-```
-
-Convertir une image couleur en noir et blanc:
-
-```bash
-python3 nb.py entree.jpg sortie.jpg
-```
-
-## Structure
-
-```text
-tp4-nombres-premiers-et-images/
-├── data/
-│   ├── chien.jpg
-│   └── ps5.png
-├── docs/
-│   └── TP4.pdf
-├── src/
-│   ├── classes.py
-│   ├── decomposition.py
-│   ├── goldbach.py
-│   └── PremierContactNumpy.py
-├── nb.py
-├── requirements.txt
-└── README.md
-```
+Les tests numériques confrontent le crible à une division d’essai indépendante, reconstruisent les entiers à partir de leurs facteurs et contrôlent les couples de Goldbach. Les tests d’images vérifient les pixels, les bordures, les erreurs et la lecture/écriture de PNG, sans fenêtre graphique.

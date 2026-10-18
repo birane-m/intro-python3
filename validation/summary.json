@@ -1,0 +1,43 @@
+{
+  "validated_at_utc": "2026-10-18T11:17:14.140719+00:00",
+  "source_baseline": "9a23e4d458c4f479f1237ade757d771b41a10473",
+  "python": "3.12.14",
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "dependencies": {
+    "numpy": "2.5.4",
+    "opencv-python": "4.14.0"
+  },
+  "full_suite": {
+    "command": "python -m unittest discover -s tests -v",
+    "tests": 87,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "core_suite": {
+    "command": "python -m unittest discover -s tests -p 'test_tp*.py' -v",
+    "tests": 68,
+    "failures": 0,
+    "errors": 0
+  },
+  "checks": {
+    "python_3_10_syntax": true,
+    "reference_data_unchanged": true,
+    "assignment_pdfs_unchanged": true,
+    "phone_counts": {
+      "total": 67,
+      "valid": 63,
+      "invalid": 4,
+      "duplicate_group_sizes": [
+        2,
+        3
+      ]
+    },
+    "quadgram_reference_score_rounded": 12176.13,
+    "utf8_and_line_endings_roundtrip": true,
+    "examples_generated": true,
+    "image_comparison_visually_checked": true
+  },
+  "scope": "Exécution locale sous Linux/Python 3.12 ; workflow distant configuré pour 3.10, 3.12 et 3.13, non exécuté ici."
+}

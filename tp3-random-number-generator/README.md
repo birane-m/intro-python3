@@ -1,33 +1,51 @@
-# TP3 - Random Number Generator
+# TP3 — Générateurs aléatoires
 
-Projet Python orienté objet permettant de simuler plusieurs générateurs aléatoires: dés équilibrés, dés truqués, dés illustrés, pièce de monnaie, sac de billes sans remise et paquets de dés.
+Modéliser des dés équilibrés et pondérés, des faces illustrées, une pièce, un sac de billes sans remise et des paquets de dés.
 
-## Problème
+[Énoncé](docs/TP3.pdf) · [Installation commune](../README.md#installation) · [Guide d’exécution](../GUIDE_EXECUTION.md#tp3--effectuer-des-tirages)
 
-Le TP demande de modéliser différents objets capables de produire des tirages aléatoires, tout en évitant la duplication de code.
+## Conception
 
-Il faut gérer plusieurs cas:
-1. un dé classique à `N` faces ;
-2. un dé truqué avec des probabilités pondérées ;
-3. un paquet regroupant plusieurs dés ;
-4. des objets plus spécialisés, comme une pièce ou un sac de billes tirées sans remise.
+`MyRandom` impose un constructeur et une méthode `tirer()` abstraits. Chaque générateur possède son propre `random.Random`. `DeNfacestruque` réalise les tirages pondérés ; les dés équilibrés réutilisent ce comportement avec des poids égaux.
 
-## Solution proposée
+`PaquetDe` contient des générateurs plutôt que d’hériter de `MyRandom`. Les tirages sont regroupés par lancer avec `zip`. `DeNfacesIllustrees`, `Piece` et `SacNBillesSansRemise` complètent le modèle.
 
-La solution repose sur une hiérarchie de classes dans `src/classes.py`.
+## Commandes
 
-`MyRandom` définit l'interface commune avec la méthode abstraite `tirer()`.
+Depuis le dossier du TP3 :
 
-`DeNfacestruque` gère les tirages pondérés grâce à `random.choices`. Les dés équilibrés héritent de cette classe en utilisant des poids identiques pour toutes les faces.
+```bash
+python src/denface.py 6 5
+python src/denfacetruque.py 4 10 1 5 1 1
+python src/paquetde.py 5 6 8 12
+```
 
-`PaquetDe` regroupe plusieurs dés et surcharge l'opérateur `+` pour permettre des combinaisons naturelles comme `de1 + de2` ou `paquet + de`.
+L’option facultative `--seed` permet de reproduire une expérience :
 
-`DeNfacesIllustrees`, `Piece` et `SacNBillesSansRemise` étendent le modèle pour gérer des faces nommées ou des tirages sans remise.
+```bash
+python src/paquetde.py 5 6 8 12 --seed 42
+```
 
-Exemple d'utilisation directe:
+Les commandes affichent uniquement les résultats, comme demandé dans l’énoncé : une valeur par ligne pour un dé, un lancer par ligne pour un paquet. Les erreurs vont sur `stderr` et renvoient un code non nul.
+
+## Contrats des classes
+
+| Paramètre | Règle |
+| --- | --- |
+| Nombre de faces ou de billes | Entier strictement positif |
+| Nombre de tirages | Entier positif ou nul ; zéro donne une liste vide |
+| Poids | Un poids fini et non négatif par face, avec une somme strictement positive |
+| Faces illustrées | Au moins un élément |
+| Contenu d’un paquet | Instances de `MyRandom` uniquement |
+
+Les poids décimaux et les faces de poids nul sont autorisés. Sans poids explicites, le dé est équilibré. Un sac se recharge uniquement après épuisement de son contenu ; chaque cycle complet contient toutes ses billes une seule fois.
+
+## Utilisation et copies
+
+Depuis le dossier du TP3 :
 
 ```python
-from classes import De6faces, DeNfaces, PaquetDe
+from src.classes import De6faces, DeNfaces, PaquetDe
 
 de = De6faces(seed=1)
 print(de.tirer(5))
@@ -36,90 +54,20 @@ paquet = PaquetDe(De6faces(seed=1), DeNfaces(4, seed=2))
 print(paquet.tirer(3))
 ```
 
-Sortie:
+Le constructeur `PaquetDe(de1, de2)` conserve les objets transmis. Toutes les additions (`dé + dé`, `paquet + dé`, `dé + paquet`, `paquet + paquet`) créent de nouveaux objets et des copies profondes des dés. Tirer dans le paquet résultant n’avance donc pas les générateurs des opérandes.
 
-```text
-[1, 6, 5, 2, 3]
-[(1, 4), (6, 4), (5, 1)]
-```
+Une copie profonde copie aussi l’état aléatoire. Deux dés copiés depuis le même état peuvent donner les mêmes suites : indépendance des objets en mémoire et indépendance statistique sont deux notions différentes. Pour des dés créés séparément, éviter de leur imposer tous la même graine. La commande des paquets dérive des graines distinctes d’une graine maître.
 
-## Exemples de tests
+## Tests
 
-Depuis le dossier du TP3, lancer la suite de tests:
+Depuis la racine du dépôt :
 
 ```bash
-python3 src/test_tp3.py
+python -m unittest tests.test_tp3 -v
 ```
 
-Tester un dé classique:
+L’ancien point d’entrée `python src/test_tp3.py`, depuis ce dossier, lance cette même suite. Les tests couvrent les validations, les graines, les cycles du sac, la composition, les copies et les formats des commandes.
 
-```bash
-python3 src/denface.py 6 5
-```
+## Périmètre
 
-Tester un dé truqué à 4 faces:
-
-```bash
-python3 src/denfacetruque.py 4 10 1 5 1 1
-```
-
-Tester un paquet de dés:
-
-```bash
-python3 src/paquetde.py 5 6 8 12
-```
-
-Vérifier la syntaxe Python:
-
-```bash
-python3 -m py_compile src/classes.py src/denface.py src/denfacetruque.py src/paquetde.py src/test_tp3.py
-```
-
-## Exécution
-
-Cloner le dépôt:
-
-```bash
-git clone https://github.com/birane-m/intro-python3.git
-```
-
-Se placer dans le dossier du TP3:
-
-```bash
-cd intro-python3/tp3-random-number-generator
-```
-
-Lancer un dé classique:
-
-```bash
-python3 src/denface.py <nb_faces> <nb_tirages>
-```
-
-Lancer un dé truqué:
-
-```bash
-python3 src/denfacetruque.py <nb_faces> <nb_tirages> <poids_1> ... <poids_N>
-```
-
-Lancer un paquet de dés:
-
-```bash
-python3 src/paquetde.py <nb_tirages> <faces_de1> <faces_de2> ...
-```
-
-Prérequis: Python 3. Aucune dépendance externe n'est nécessaire pour les scripts du TP.
-
-## Structure
-
-```text
-tp3-random-number-generator/
-├── README.md
-├── docs/
-│   └── TP3.pdf
-└── src/
-    ├── classes.py
-    ├── denface.py
-    ├── denfacetruque.py
-    ├── paquetde.py
-    └── test_tp3.py
-```
+Aucune dépendance externe ni connexion réseau n’est nécessaire. L’extension facultative de l’énoncé utilisant une source quantique distante n’est pas implémentée ; la copie locale du paquet tiers présente dans certains dossiers de travail n’est pas utilisée.
