@@ -95,7 +95,6 @@ Les ressources `data/` et les énoncés `docs/` proviennent des supports de cour
 
 - [Guide d’exécution et sorties](GUIDE_EXECUTION.md)
 - [Corrections et choix de conception](MODIFICATIONS.md)
-- [Intégrer l’archive dans un dépôt existant](INTEGRATION.md)
 - [Bilan des vérifications](validation/README.md)
 
 Auteur des solutions : **Papa Birane Mbengue**.
