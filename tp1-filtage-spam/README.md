@@ -2,7 +2,7 @@
 
 Normaliser une liste de numéros français, éliminer les numéros invalides et repérer les personnes partageant un même numéro.
 
-[Énoncé](docs/TP1_Enonce.pdf) · [Installation commune](../README.md#installation) · [Guide d’exécution](../GUIDE_EXECUTION.md)
+[Énoncé](docs/TP1_Enonce.pdf) · [Installation commune](../README.md#installation)
 
 ## Méthode
 
@@ -25,6 +25,17 @@ python src/format_phone_numbers.py
 ```
 
 Les chemins par défaut sont liés à l’emplacement du script ; ces deux commandes lisent les mêmes données. Les options `--input`, `--output` et `--summary` permettent de choisir d’autres fichiers.
+
+Depuis ce dossier, pour choisir les entrées et les sorties :
+
+```bash
+python src/format_phone_numbers.py \
+  --input data/liste_numeros.txt \
+  --output output/numeros.txt \
+  --summary output/bilan.json
+```
+
+Les chemins donnés en argument sont relatifs au dossier courant.
 
 ## Entrées et sorties
 

@@ -2,7 +2,7 @@
 
 Implémenter une substitution monoalphabétique, son inverse et une recherche locale de clé fondée sur les quadgrammes anglais.
 
-[Énoncé](docs/TP2.pdf) · [Installation commune](../README.md#installation) · [Commandes détaillées](../GUIDE_EXECUTION.md#tp2--chiffrer-et-déchiffrer)
+[Énoncé](docs/TP2.pdf) · [Installation commune](../README.md#installation)
 
 ## Modèle
 
@@ -23,7 +23,7 @@ python encodage.py data/test_encoding.txt zyxwvutsrqponmlkjihgfedcba output/enco
 python decodage.py output/encoded.txt zyxwvutsrqponmlkjihgfedcba output/decoded.txt
 ```
 
-Les deux commandes reçoivent **la même clé de chiffrement originale**. Les dossiers de sortie sont créés automatiquement. Les fichiers sont lus et écrits en UTF-8.
+Les deux commandes reçoivent **la même clé de chiffrement originale**. Les dossiers de sortie sont créés automatiquement. Les fichiers sont lus et écrits en UTF-8, en conservant leurs fins de ligne.
 
 Une clé répétant une lettre, contenant une majuscule ou ayant une longueur différente de 26 est rejetée. Les erreurs de lecture et d’écriture produisent un code d’échec et un diagnostic sur `stderr`.
 
@@ -34,7 +34,7 @@ python cassercode.py data/mystery_text.txt data/english_quadgrams.txt output/can
   --seed 42 --max-iterations 5000 --summary output/recherche.json
 ```
 
-Les trois premiers arguments restent ceux du rendu demandé. Les options ajoutent la reproductibilité, une limite globale facultative et un bilan JSON.
+`--seed` fixe la graine, `--max-iterations` ajoute un budget global et `--summary` écrit le bilan JSON. Ces options sont facultatives. À la fin du budget, le fichier de sortie contient le meilleur candidat trouvé ; cet arrêt ne signifie pas une erreur technique.
 
 Le score suit l’énoncé : somme des logarithmes des fréquences brutes des quadgrammes connus. Les quadgrammes absents contribuent zéro. Le score de référence du fichier `mystery_text.txt` nettoyé est **12176,13**, à l’arrondi du sujet. Les logarithmes du modèle sont préparés une seule fois.
 

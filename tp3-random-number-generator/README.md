@@ -2,7 +2,7 @@
 
 Modéliser des dés équilibrés et pondérés, des faces illustrées, une pièce, un sac de billes sans remise et des paquets de dés.
 
-[Énoncé](docs/TP3.pdf) · [Installation commune](../README.md#installation) · [Guide d’exécution](../GUIDE_EXECUTION.md#tp3--effectuer-des-tirages)
+[Énoncé](docs/TP3.pdf) · [Installation commune](../README.md#installation)
 
 ## Conception
 
@@ -56,7 +56,7 @@ print(paquet.tirer(3))
 
 Le constructeur `PaquetDe(de1, de2)` conserve les objets transmis. Toutes les additions (`dé + dé`, `paquet + dé`, `dé + paquet`, `paquet + paquet`) créent de nouveaux objets et des copies profondes des dés. Tirer dans le paquet résultant n’avance donc pas les générateurs des opérandes.
 
-Une copie profonde copie aussi l’état aléatoire. Deux dés copiés depuis le même état peuvent donner les mêmes suites : indépendance des objets en mémoire et indépendance statistique sont deux notions différentes. Pour des dés créés séparément, éviter de leur imposer tous la même graine. La commande des paquets dérive des graines distinctes d’une graine maître.
+Une copie profonde copie aussi l’état aléatoire. Deux dés copiés depuis le même état peuvent donner les mêmes suites : indépendance des objets en mémoire et indépendance statistique sont deux notions différentes. Pour des dés créés séparément, éviter de leur imposer tous la même graine. La commande des paquets dérive des graines distinctes d’une graine maître. Une même graine permet de reproduire les tirages dans un même environnement Python.
 
 ## Tests
 
@@ -66,8 +66,8 @@ Depuis la racine du dépôt :
 python -m unittest tests.test_tp3 -v
 ```
 
-L’ancien point d’entrée `python src/test_tp3.py`, depuis ce dossier, lance cette même suite. Les tests couvrent les validations, les graines, les cycles du sac, la composition, les copies et les formats des commandes.
+Les tests couvrent les validations, les graines, les cycles du sac, la composition, les copies et les formats des commandes.
 
 ## Périmètre
 
-Aucune dépendance externe ni connexion réseau n’est nécessaire. L’extension facultative de l’énoncé utilisant une source quantique distante n’est pas implémentée ; la copie locale du paquet tiers présente dans certains dossiers de travail n’est pas utilisée.
+Les générateurs utilisent `random.Random` et fonctionnent hors ligne. L’extension facultative de l’énoncé utilisant une source quantique distante n’est pas implémentée.

@@ -2,7 +2,7 @@
 
 Deux parties indépendantes : préparer les nombres premiers avec un crible d’Ératosthène, puis manipuler des images comme des tableaux NumPy.
 
-[Énoncé](docs/TP4.pdf) · [Installation commune](../README.md#installation) · [Guide d’exécution](../GUIDE_EXECUTION.md)
+[Énoncé](docs/TP4.pdf) · [Installation commune](../README.md#installation)
 
 ## Nombres premiers
 
@@ -49,7 +49,7 @@ python nb.py data/chien.jpg output/chien_gris.png
 python src/PremierContactNumpy.py
 ```
 
-`PremierContactNumpy.py` explore le broadcasting et les propriétés d’une image. Il est désormais fourni et importable sans exécuter de traitement à l’import.
+`PremierContactNumpy.py` illustre le broadcasting et affiche les dimensions, le type des pixels et les canaux d’une image, sans ouvrir de fenêtre graphique.
 
 La classe `Image` propose :
 
